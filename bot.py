@@ -23,20 +23,24 @@ def receive_message():
     bot.process_new_updates([update])
     return "!", 200
 
+# Fungsi untuk arahan /start atau /help
 @bot.message_handler(commands=["start", "help"])
 def send_welcome(message):
-    bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman. Ada apa yang boleh saya bantu?")
+    bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman yang dijana oleh AI. Ada apa yang boleh saya bantu?")
 
+# Fungsi untuk semua teks lain (soalan biasa / ayam sakit)
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
+    # Abaikan jika mesej bermula dengan garis miring '/'
+    if message.text.startswith('/'):
+        return
     try:
         response = model.generate_content(message.text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "Maaf, ralat berlaku.")
+        bot.reply_to(message, "Maaf, ralat berlaku semasa memproses soalan.")
 
 if __name__ == "__main__":
-    # Tetapkan webhook automatik ke URL Render Wan
     bot.remove_webhook()
     bot.set_webhook(url=f"https://doctor-unggas-bot.onrender.com/{TELEGRAM_TOKEN}")
     
