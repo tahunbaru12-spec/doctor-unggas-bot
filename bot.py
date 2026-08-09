@@ -26,12 +26,15 @@ def receive_message():
     else:
         return "Invalid Request", 403
 
-@bot.message_handler(commands=["start", "help"])
+@bot.message_handler(commands=["start", "stard", "help"])
 def send_welcome(message):
     bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman. Ada apa yang boleh saya bantu?")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
+    # Abaikan jika mesej bermula dengan tanda '/'
+    if message.text.startswith('/'):
+        return
     try:
         response = model.generate_content(message.text)
         bot.reply_to(message, response.text)
