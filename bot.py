@@ -23,23 +23,25 @@ def receive_message():
         update = telebot.types.Update.de_json(json_string)
         bot.process_new_updates([update])
         return "!", 200
-    else:
-        return "Invalid Request", 403
+    return "Invalid Request", 403
 
+# Tangkap semua jenis arahan permulaan
 @bot.message_handler(commands=["start", "stard", "help"])
 def send_welcome(message):
     bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman. Ada apa yang boleh saya bantu?")
 
+# Tangkap semua mesej teks biasa
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    # Abaikan jika mesej bermula dengan tanda '/'
-    if message.text.startswith('/'):
+    # Jika mesej kosong atau hanya simbol khas, abaikan
+    if not message.text or message.text.startswith('/'):
         return
     try:
+        # Hantar teks ke Gemini AI
         response = model.generate_content(message.text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "Maaf, ralat berlaku semasa memproses jawapan.")
+        bot.reply_to(message, f"Ralat AI: {str(e)}")
 
 if __name__ == "__main__":
     bot.remove_webhook()
