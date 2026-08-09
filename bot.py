@@ -6,7 +6,6 @@ from flask import Flask, request
 TELEGRAM_TOKEN = "8740787222:AAEL91UI9Qoatpo6DtViHD8yluyzCcHem1w"
 GEMINI_API_KEY = "AQ.Ab8RN6JsJJlagi8qN8EQWBzd84nU4CYAYD4_iXVwAlnSDH0Log"
 
-# Inisialisasi klien Gemini baru
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -34,7 +33,6 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     try:
-        # Panggilan model menggunakan SDK baru
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=message.text,
