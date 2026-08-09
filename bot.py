@@ -1,7 +1,8 @@
 import os
 import telebot
 import google.generativeai as genai
-from flask import Flask, request
+from flask import Flask
+from threading import Thread
 
 TELEGRAM_TOKEN = "8740787222:AAEL91UI9Qoatpo6DtViHD8yluyzCcHem1w"
 GEMINI_API_KEY = "AQ.Ab8RN6JsJJlagi8qN8EQWBzd84nU4CYAYD4_iXVwAlnSDH0Log"
@@ -10,39 +11,34 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-app = Flask(__name__)
+app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot Doctor Unggas & Tanaman aktif!"
+    return "Bot Doctor Unggas & Tanaman sedang aktif!"
 
-@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
-def receive_message():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
 
-# Fungsi untuk arahan /start atau /help
 @bot.message_handler(commands=["start", "help"])
 def send_welcome(message):
-    bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman yang dijana oleh AI. Ada apa yang boleh saya bantu?")
+    bot.reply_to(message, "Hai! Saya Doctor Unggas & Tanaman. Ada apa yang boleh saya bantu berkaitan ayam atau tanaman?")
 
-# Fungsi untuk semua teks lain (soalan biasa / ayam sakit)
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    # Abaikan jika mesej bermula dengan garis miring '/'
-    if message.text.startswith('/'):
-        return
     try:
         response = model.generate_content(message.text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "Maaf, ralat berlaku semasa memproses soalan.")
+        bot.reply_to(message, "Maaf, ralat berlaku.")
 
 if __name__ == "__main__":
+    # Buang webhook lama supaya bot tidak keliru dan guna polling penuh
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://doctor-unggas-bot.onrender.com/{TELEGRAM_TOKEN}")
     
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    # Hidupkan pelayan Flask di latar belakang untuk elak Render "tidurkan" bot
+    t = Thread(target=run_flask)
+    t.start()
+    
+    print("Bot sedang berjalan dengan polling...")
+    bot.infinity_polling(none_stop=True, interval=0, timeout=20)
