@@ -5,7 +5,7 @@ import threading
 from flask import Flask
 
 TELEGRAM_TOKEN = "8740787222:AAEL91UI9Qoatpo6DtViHD8yluyzCcHem1w"
-GEMINI_API_KEY = "AQ.Ab8RN6JsJJlagi8qN8EQWBzd84nU4CYAYD4_iXVwAlnSDH0Log"
+GEMINI_API_KEY = "AQ.Ab8RN6JR4VrGLzBJ_biJVGZISoclTYRFSUALRMHNL0CnxZxJxA"
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -15,7 +15,6 @@ app = Flask(__name__)
 def home():
     return "Bot Doctor Unggas & Tanaman aktif!"
 
-# Fungsi untuk menjalankan bot polling dalam background thread
 def run_bot():
     bot.remove_webhook()
     print("Bot sedang berjalan dengan polling...")
@@ -39,7 +38,6 @@ def handle_message(message):
         bot.reply_to(message, f"Ralat AI: {str(e)}")
 
 if __name__ == "__main__":
-    # Jalankan bot polling dalam thread asing supaya port Flask di Render tidak terhalang
     t = threading.Thread(target=run_bot)
     t.daemon = True
     t.start()
