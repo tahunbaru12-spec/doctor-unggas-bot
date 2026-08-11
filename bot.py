@@ -16,9 +16,12 @@ def home():
     return "Bot Doctor Unggas & Tanaman aktif!"
 
 def run_bot():
-    bot.remove_webhook()
-    print("Bot sedang berjalan dengan polling...")
-    bot.infinity_polling(skip_pending=True)
+    try:
+        bot.remove_webhook()
+        print("Webhook dibuang, memulakan polling...")
+        bot.infinity_polling(skip_pending=True)
+    except Exception as e:
+        print(ferr: {e})
 
 @bot.message_handler(commands=["start", "stard", "help"])
 def send_welcome(message):
