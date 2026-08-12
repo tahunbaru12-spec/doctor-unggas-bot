@@ -1,31 +1,42 @@
 import os
 import telebot
 from flask import Flask, request
+import requests
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# URL Render Wan
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
 @app.route('/')
 def home():
-    return "Bot Webhook Aktif!"
+    return "Bot Doctor Unggas & Tanaman Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
-    json_str = request.get_data().astype(str) if hasattr(request.get_data(), 'astype') else request.get_data().decode('utf-8')
+    json_str = request.get_data().decode('utf-8')
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return "!", 200
 
 @bot.message_handler(func=lambda message: True)
-def echo_all(message):
-    bot.reply_to(message, "Bot Webhook berjaya terima: " + message.text)
+def handle_message(message):
+    if not message.text or message.text.startswith('/'):
+        return
+    
+    # Respons automatik pakar ungus & tanaman sementara sistem AI diselaraskan
+    teks = message.text.lower()
+    if "sakit mata" in teks or "mata" in teks:
+        balasan = "Bagi kes ayam sakit mata (selalunya tanda Choriza atau Selesap Ayam), boleh cuci mata ayam menggunakan air garam cair atau ubat titik mata antiseptik, serta asingkan ayam yang sakit."
+    elif "ayam" in teks:
+        balasan = "Untuk kesihatan ayam, pastikan reban sentiasa kering, bersih, dan diberi vaksin serta makanan yang berkhasiat."
+    else:
+        balasan = f"Terima soalannya: '{message.text}'. Sebagai Doktor Unggas & Tanaman, saya terima maklumat ini dan sedang memprosesnya!"
+
+    bot.reply_to(message, balasan)
 
 if __name__ == "__main__":
-    # Set webhook secara automatik semasa bot mula
     bot.remove_webhook()
     bot.set_webhook(url=RENDER_URL + TOKEN)
     
