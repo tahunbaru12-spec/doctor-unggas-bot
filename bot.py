@@ -18,10 +18,10 @@ def home():
 def run_bot():
     try:
         bot.remove_webhook()
-        print("Webhook dibuang, memulakan polling...")
+        print("Memulakan bot polling...")
         bot.infinity_polling(skip_pending=True)
     except Exception as e:
-        print(ferr: {e})
+        print(f"Ralat Polling: {e}")
 
 @bot.message_handler(commands=["start", "stard", "help"])
 def send_welcome(message):
