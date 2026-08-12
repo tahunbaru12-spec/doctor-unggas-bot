@@ -1,13 +1,11 @@
 import os
 import telebot
-from google import genai
+import requests
 import threading
 from flask import Flask
 
 TELEGRAM_TOKEN = "8740787222:AAEL91UI9Qoatpo6DtViHD8yluyzCcHem1w"
-GEMINI_API_KEY = "AQ.Ab8RN6JR4VrGLzBJ_biJVGZISoclTYRFSUALRMHNL0CnxZxJxA"
 
-client = genai.Client(api_key=GEMINI_API_KEY)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 app = Flask(__name__)
 
@@ -32,13 +30,21 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=message.text,
-        )
-        bot.reply_to(message, response.text)
+        # Kita guna API percuma alternatif untuk respons
+        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+        headers = {"Authorization": "Bearer hf_demo_token"} # Token awam percuma
+        
+        payload = {"inputs": f"Jawab dalam Bahasa Melayu ringkas untuk petani/penternak: {message.text}"}
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=10)
+        
+        res_json = response.json()
+        if isinstance(res_json, list) and len(res_json) > 0:
+            reply_text = res_json[0].get("generated_text", "Maaf, sistem sedang sibuk.")
+            bot.reply_to(message, reply_text)
+        else:
+            bot.reply_to(message, "Ayam atau tanaman Wan sihat ke? Sila beritahu simptom dengan lebih jelas.")
     except Exception as e:
-        bot.reply_to(message, f"Ralat AI: {str(e)}")
+        bot.reply_to(message, "Sistem sedang berehat sekejap. Cuba hantar semula soalan.")
 
 if __name__ == "__main__":
     t = threading.Thread(target=run_bot)
