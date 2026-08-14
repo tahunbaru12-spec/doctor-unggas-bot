@@ -1,23 +1,15 @@
 import os
 import telebot
-from flask import Flask, request
+from flask import Flask
+import threading
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-
 @app.route('/')
 def home():
     return "Bot Doctor Unggas Aktif!"
-
-@app.route(f'/{TOKEN}', methods=['POST'])
-def receive_message():
-    json_str = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "!", 200
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -34,10 +26,16 @@ def handle_message(message):
 
     bot.reply_to(message, balasan)
 
+def run_polling():
+    try:
+        bot.remove_webhook()
+        bot.infinity_polling(timeout=60, long_polling_timeout=60)
+    except Exception as e:
+        print(f"Polling error: {e}")
+
 if __name__ == "__main__":
-    # Padam polling lama dan set webhook rasmi
-    bot.remove_webhook()
-    bot.set_webhook(url=RENDER_URL + TOKEN)
+    # Jalankan polling dalam latar belakang
+    threading.Thread(target=run_polling, daemon=True).start()
     
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
