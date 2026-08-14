@@ -32,7 +32,7 @@ def handle_message(message):
             "🥥 **Tips Penjagaan Pokok Kelapa Supaya Lebat Buah:**\n"
             "1. **Baja Unsur K (Kalium/Potash):** Pokok kelapa sangat memerlukan baja berkalium tinggi serta garam kasar di pangkal pokok untuk menguatkan buah.\n"
             "2. **Pembersihan Pelepah:** Buang pelepah tua yang melendut ke bawah agar pancaran cahaya matahari mengenai pucuk sepenuhnya.\n"
-            "3. **Kawalan Perosak:** Awasi ancaman kumbang tanduk (*Rhinoceros beetle*) dan benamkan musuh semulajadi jika perlu."
+            "3. **Kawalan Perosak:** Awasi ancaman kumbang tanduk dan pastikan kawasan sekitar bersih."
         )
     # 2. Topik Pokok Pisang
     elif any(k in teks for k in ["pisang", "jantung"]):
