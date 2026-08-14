@@ -1,12 +1,17 @@
 import os
 import telebot
 from flask import Flask, request
+import requests
+import json
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
+
+# Token/Pin yang Wan berikan
+USER_API_KEY = "AQ.Ab8RN6KnGgESJg0FtMIPy7sqrfgjvQlJrZuUwoh35UF7oiFGhQ"
 
 @app.route('/')
 def home():
@@ -24,41 +29,34 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     
+    # Respons pintar merangkumi semua jenis unggas (puyuh, ayam, itik) dan tanaman
     teks = message.text.lower()
     
-    # 1. Topik Pokok Kelapa
-    if any(k in teks for k in ["kelapa", "nyior", "santan"]):
+    if any(k in teks for k in ["puyuh", "burung"]):
         balasan = (
-            "🥥 **Tips Penjagaan Pokok Kelapa Supaya Lebat Buah:**\n"
-            "1. **Baja Unsur K (Kalium/Potash):** Pokok kelapa sangat memerlukan baja berkalium tinggi serta garam kasar di pangkal pokok untuk menguatkan buah.\n"
-            "2. **Pembersihan Pelepah:** Buang pelepah tua yang melendut ke bawah agar pancaran cahaya matahari mengenai pucuk sepenuhnya.\n"
-            "3. **Kawalan Perosak:** Awasi ancaman kumbang tanduk dan pastikan kawasan sekitar bersih."
+            "🐦 **Panduan Penternakan Burung Puyuh:**\n"
+            "1. **Makanan:** Berikan dedak pemula (*starter*) berprotein tinggi untuk anak puyuh dan dedak penelur untuk puyuh dewasa.\n"
+            "2. **Suhu Reban:** Pastikan anak puyuh mendapat haba yang cukup pada minggu pertama.\n"
+            "3. **Kebersihan:** Reban puyuh cepat berbau, jadi cuci alas dan kekalkan pengudaraan yang baik."
         )
-    # 2. Topik Pokok Pisang
-    elif any(k in teks for k in ["pisang", "jantung"]):
+    elif any(k in teks for k in ["ayam", "itik", "angsa"]):
         balasan = (
-            "🍌 **Tips Penjagaan Pokok Pisang:**\n"
-            "1. **Pangkas Anak:** Tinggalkan hanya 3 pokok sepokok (ibu, anak besar, cucu) supaya nutrien diserap sepenuhnya oleh buah.\n"
-            "2. **Baja Buah:** Gunakan baja NPK 12-12-17 atau baja organik tahi ayam di sekeliling pangkal pokok secara berkala."
+            "🐔 **Panduan Penternakan Unggas (Ayam/Itik):**\n"
+            "1. Pastikan air minuman sentiasa bersih dan dicampur vitamin jika perlu.\n"
+            "2. Kawal kebersihan reban untuk elakkan penyakit kutu, batuk, atau sakit mata.\n"
+            "3. Berikan makanan seimbang mengikut peringkat umur ternakan."
         )
-    # 3. Topik Ayam: Sakit Mata
-    elif any(k in teks for k in ["sakit mata", "mata", "bengkak mata"]):
+    elif any(k in teks for k in ["tanaman", "pokok", "sayur", "buah", "baja", "cili", "sawit", "getah"]):
         balasan = (
-            "🩺 **Rawatan Mata Ayam Sakit:**\n"
-            "1. Cuci mata ayam menggunakan air garam cair (suam kuku) atau ubat titik mata antiseptik (Terra-Cortril).\n"
-            "2. Asingkan ayam yang sakit dari kawan-kawannya untuk elakkan jangkitan merebak."
-        )
-    # 4. Topik Ayam: Telur
-    elif any(k in teks for k in ["telur", "bertelur", "penelur", "hasil"]):
-        balasan = (
-            "🥚 **Tips Supaya Ayam Rajin Bertelur:**\n"
-            "1. Berikan dedak khusus penelur (*layer feed*) dicampur jagung hancur.\n"
-            "2. Sediakan cahaya terang yang cukup dan sarang bertelur yang selesa serta gelap."
+            "🌱 **Panduan Pertanian & Tanaman:**\n"
+            "1. **Pencahayaan:** Pastikan pokok mendapat cahaya matahari secukupnya.\n"
+            "2. **Pembajaan:** Gunakan baja yang bersesuaian (baja pertumbuhan atau baja buah/bunga).\n"
+            "3. **Air & Saliran:** Pastikan tanah lembap tetapi air tidak bertakung di pangkal pokok untuk elakkan akar busuk."
         )
     else:
         balasan = (
             f"🤖 Baik Wan, mengenai '{message.text}':\n\n"
-            "Sebagai Doktor Unggas & Tanaman, saya sedia bantu! Cuba tanya tentang 'pokok kelapa', 'pokok pisang', 'ayam sakit mata', atau 'nak banyak telur'."
+            "Sebagai Doktor Unggas & Tanaman, saya sedia bantu pelbagai jenis ternakan (ayam, itik, puyuh) dan tanaman (sayur, buah, pokok). Cuba tanya soalan yang lebih spesifik!"
         )
 
     bot.reply_to(message, balasan)
