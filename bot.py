@@ -9,9 +9,12 @@ app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
+# Kunci Direct AI Groq Wan
+GROQ_API_KEY = "gsk_MCqDF8xo5IVP..."
+
 @app.route('/')
 def home():
-    return "Bot Direct AI Aktif!"
+    return "Bot Groq Direct AI Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -25,36 +28,42 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     
-    soalan_pengguna = message.text
+    soalan_wan = message.text
+    
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Anda adalah Doktor Pakar Haiwan, Ternakan, dan Pertanian Malaysia. Anda arif tentang ayam, itik, puyuh, lembu, kambing, dan semua jenis tanaman. Jawab soalan pengguna secara terus, terperinci, dan mesra dalam bahasa Melayu tanpa sebarang jawapan teks dalam kod."
+            },
+            {
+                "role": "user",
+                "content": soalan_wan
+            }
+        ]
+    }
     
     try:
-        # Menggunakan Direct API percuma awam untuk mendapatkan jawapan AI sebenar
-        url = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
-        headers = {"Authorization": "Bearer hf_demo_api_key"} # Menggunakan token akses awam terbuka
-        payload = {
-            "inputs": f"Bertindak sebagai Doktor Haiwan dan Pakar Pertanian Malaysia yang arif tentang ayam, lembu, kambing, puyuh, itik, dan semua jenis tanaman. Jawab soalan ini dalam Bahasa Melayu dengan bernas: {soalan_pengguna}"
-        }
-        
-        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
         
         if response.status_code == 200:
             hasil = response.json()
-            if isinstance(hasil, list) and len(hasil) > 0:
-                balasan = hasil[0].get("generated_text", "").replace(payload["inputs"], "").strip()
-            elif isinstance(hasil, dict):
-                balasan = hasil.get("generated_text", "Sila cuba sebentar lagi.")
-            else:
-                balasan = "Maaf Wan, AI sedang memproses jawapan."
+            balasan = hasil["choices"][0]["message"]["content"]
         else:
-            # Fallback direct AI pintar sekiranya pelayan sibuk
-            balasan = (
-                f"🤖 **Direct AI Analyzer:**\n"
-                f"Mengenai persoalan *'{soalan_pengguna}'*, sebagai pakar biologi dan agrikultur, "
-                "masalah ini memerlukan pemerhatian pada simptom fizikal (seperti tanda jangkitan luaran, persekitaran reban, atau nutrien tanah). "
-                "Sila pastikan pengudaraan dan kebersihan berada di tahap optimum sementara rawatan spesifik diberikan."
-            )
+            balasan = "Maaf Wan, pelayan AI sedang sibuk. Cuba tanya sebentar lagi ya!"
     except Exception as e:
-        balasan = f"🤖 Maaf Wan, ralat sambungan Direct AI: {str(e)}"
+        balasan = f"Ralat sambungan AI: {str(e)}"
 
     bot.reply_to(message, balasan)
 
