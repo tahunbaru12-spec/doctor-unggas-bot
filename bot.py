@@ -1,16 +1,32 @@
 import os
 import telebot
 from flask import Flask, request
+import google.generativeai as genai
 
+# Token Telegram Bot Wan
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
+# Konfigurasi Google Gemini AI dengan PIN/API Key yang Wan berikan
+GEMINI_API_KEY = "AQ.Ab8RN6KnGgESJg0FtMIPy7sqrfgjvQlJrZuUwoh35UF7oiFGhQ"
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Tetapkan perwatakan bot sebagai Doktor Unggas & Tanaman yang pakar
+generation_config = {
+    "temperature": 0.7,
+}
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+    system_instruction="Anda adalah 'Doktor Unggas & Tanaman', sebuah bot pakar pertanian, penternakan ayam, dan penjagaan tanaman di Malaysia. Jawab soalan pengguna dengan mesra, bernas, tepat, dan dalam bahasa Melayu yang mudah difahami."
+)
+
 @app.route('/')
 def home():
-    return "Bot Doctor Unggas & Tanaman AI Aktif!"
+    return "Bot Doctor Unggas & Tanaman AI Berkuasa Gemini Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -24,47 +40,12 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     
-    teks = message.text.lower()
-    
-    # 1. Topik Ayam: Sakit Mata
-    if any(k in teks for k in ["sakit mata", "mata", "bengkak mata"]):
-        balasan = (
-            "🩺 **Rawatan Mata Ayam Sakit:**\n"
-            "1. Cuci mata ayam menggunakan air garam cair (suam kuku) atau ubat titik mata antiseptik (seperti Terra-Cortril).\n"
-            "2. Asingkan ayam yang sakit dari kawan-kawannya untuk elakkan jangkitan.\n"
-            "3. Pastikan reban tidak berhabuk dan bebas daripada tahi bergas ammonia tinggi."
-        )
-    # 2. Topik Ayam: Telur
-    elif any(k in teks for k in ["telur", "bertelur", "penelur", "hasil"]):
-        balasan = (
-            "🥚 **Tips Supaya Ayam Rajin & Banyak Bertelur:**\n"
-            "1. **Makanan Berkualiti:** Berikan dedak khusus penelur (*layer feed*) dicampur jagung hancur.\n"
-            "2. **Cahaya Cukup:** Ayam memerlukan sekurang-kurangnya 14 jam cahaya untuk merangsang hormon telur.\n"
-            "3. **Vitamin & Kalsium:** Tambah serbuk kulit kerang atau vitamin penelur dalam air minuman.\n"
-            "4. **Persekitaran Tenang:** Sediakan sarang bertelur yang gelap, selesa, bersih, dan bebas kutu."
-        )
-    # 3. Topik Tanaman: Pokok Pisang / Berbuah
-    elif any(k in teks for k in ["pisang", "berbuah", "buah", "pokok"]):
-        balasan = (
-            "🍌 **Tips Penjagaan Pokok Pisang Supaya Lebat & Cepat Berbuah:**\n"
-            "1. **Pangkas Anak Pokok:** Tinggalkan hanya 3 anak pokok sepokok (ibu, anak besar, dan cucu) supaya nutrien tidak berebut.\n"
-            "2. **Baja Berkalium Tinggi:** Berikan baja organik atau baja buah (NPK 12-12-17 atau baja tahi ayam) secara berkala.\n"
-            "3. **Pembersihan Pelepah:** Buang pelepah kering di bawah supaya pancaran matahari terkena penuh pada batang dan jantung.\n"
-            "4. **Air Secukupnya:** Pastikan tanah lembap tetapi tidak bertakung air."
-        )
-    # 4. Topik Umum Makanan/Baja
-    elif any(k in teks for k in ["makanan", "dedak", "makan", "pakan", "baja"]):
-        balasan = (
-            "🌱 **Panduan Umum Unggas & Tanaman:**\n"
-            "• Bagi ternakan: Pastikan makanan bersih, kering, dan bernutrisi.\n"
-            "• Bagi tanaman: Pastikan pencahayaan matahari mencukupi dan pembajaan dibuat mengikut jadual.\n"
-            "• Ada soalan khusus tentang penyakit ayam atau tanaman tertentu? Boleh terus tanya!"
-        )
-    else:
-        balasan = (
-            f"🤖 Baik Wan, mengenai '{message.text}':\n\n"
-            "Sebagai Doktor Unggas & Tanaman, saya sedia membantu! Coba tanyakan hal berkaitan 'penyakit ayam', 'nak banyak telur', atau 'cara lebatkan buah pisang'."
-        )
+    try:
+        # Hantar soalan Wan terus kepada AI Gemini
+        response = model.generate_content(message.text)
+        balasan = response.text
+    except Exception as e:
+        balasan = "Maaf Wan, sistem AI sedang sibuk sebentar. Cuba tanya sekali lagi ya!"
 
     bot.reply_to(message, balasan)
 
