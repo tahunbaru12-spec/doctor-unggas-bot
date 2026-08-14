@@ -10,7 +10,7 @@ RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
 @app.route('/')
 def home():
-    return "Bot Doctor Unggas Aktif!"
+    return "Bot Doctor Unggas & Tanaman AI Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -25,12 +25,43 @@ def handle_message(message):
         return
     
     teks = message.text.lower()
+    
+    # Jawapan bijak dan terperinci untuk pelbagai situasi ayam & tanaman
     if "sakit mata" in teks or "mata" in teks:
-        balasan = "Bagi kes ayam sakit mata, cuci mata ayam dengan air garam cair atau ubat titik mata antiseptik, serta asingkan ayam yang sakit."
-    elif "ayam" in teks:
-        balasan = "Untuk kesihatan ayam, pastikan reban sentiasa kering, bersih, dan diberi makanan berkhasiat."
+        balasan = (
+            "🩺 **Rawatan Mata Ayam Sakit:**\n"
+            "1. Cuci mata ayam menggunakan air garam cair (suam kuku) atau ubat titik mata antiseptik (seperti Terra-Cortril).\n"
+            "2. Asingkan ayam yang sakit dari kawan-kawannya untuk elakkan jangkitan.\n"
+            "3. Pastikan reban tidak berhabuk dan bebas daripada tahi yang bergas ammonia tinggi."
+        )
+    elif "kurang bertelur" in teks or "tak bertelur" in teks:
+        balasan = (
+            "🥚 **Tips Tingkatkan Hasil Telur Ayam:**\n"
+            "1. **Makanan Berkhasiat:** Berikan dedak penelur (*layer feed*) yang tinggi kalsium dan protein.\n"
+            "2. **Cahaya Cukup:** Ayam butuh sekurang-kurangnya 14 jam cahaya sehari untuk merangsang pengeluaran telur.\n"
+            "3. **Kesihatan & Vitamin:** Berikan tambahan vitamin B-Complex atau serbuk kulit kerang dalam makanan.\n"
+            "4. **Kurangkan Stres:** Pastikan reban tenang, tidak diganggu pemangsa, dan bebas kutu."
+        )
+    elif "rajin bertelur" in teks or "banyak telur" in teks:
+        balasan = (
+            "🌟 **Cara Kekalkan Ayam Rajin Bertelur:**\n"
+            "• Beri dedak khusus penelur campuran jagung hancur.\n"
+            "• Sediakan air bersih secukupnya setiap hari (tambah vitamin penelur jika ada).\n"
+            "• Sediakan sarang bertelur yang gelap, selesa, dan bersih agar ayam selesa bertelur di tempatnya."
+        )
+    elif "makanan" in teks or "dedak" in teks:
+        balasan = (
+            "🌽 **Panduan Pemakanan Unggas:**\n"
+            "• Anak ayam (Starter): Dedak tinggi protein (1-4 minggu).\n"
+            "• Ayam dewasa/penelur: Campuran dedak penelur, jagung hancur, dan dedak padi secukupnya.\n"
+            "• Pastikan bekas makanan sentiasa kering dan tiada kulat."
+        )
     else:
-        balasan = f"Doktor Unggas terima mesej: '{message.text}'."
+        balasan = (
+            f"🤖 Soalan bagus: '{message.text}'\n\n"
+            "Sebagai Doktor Unggas & Tanaman, saya sarankan agar pemakanan, kebersihan reban, dan vaksinasi dijaga rapi. "
+            "Ada apa-apa masalah spesifik mengenai penyakit ayam atau tanaman yang Wan ingin tanyakan lagi?"
+        )
 
     bot.reply_to(message, balasan)
 
