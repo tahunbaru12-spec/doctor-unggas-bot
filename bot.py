@@ -1,8 +1,6 @@
 import os
 import telebot
 from flask import Flask, request
-import requests
-import json
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
@@ -12,7 +10,7 @@ RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
 @app.route('/')
 def home():
-    return "Bot Doctor Unggas & Tanaman AI Aktif!"
+    return "Bot Doctor Pakar Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -26,15 +24,32 @@ def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     
-    soalan_wan = message.text
+    soalan = message.text.lower()
     
-    # Respons sementara yang lebih cerdik sementara sistem sambungan AI diaktifkan sepenuhnya
-    balasan = (
-        f"🤖 Wan, soalan mengenai: *\"{soalan_wan}\"*\n\n"
-        "Saya sedang menaik taraf sistem supaya ia tidak lagi menggunakan senarai jawapan tetap, sebaliknya membolehkan AI menjawab secara automatik dan terperinci untuk sebarang jenis unggas (puyuh, ayam, itik) dan tanaman di dunia!"
-    )
+    # Respons automatik universal yang profesional
+    if any(k in soalan for k in ["sakit", "rawatan", "ubat", "penyakit"]):
+        balasan = (
+            f"🩺 **Panduan Rawatan & Kesihatan:**\n"
+            f"Mengenai masalah *'{message.text}'*:\n"
+            "1. **Asingkan Ternakan:** Pastikan haiwan yang sakit diasingkan segera dari yang sihat bagi mengelakkan jangkitan.\n"
+            "2. **Kebersihan & Nutrisi:** Berikan air bersih yang dicampur vitamin/elektrolit serta pastikan reban kering dan selesa.\n"
+            "3. **Rujukan Spesifik:** Jika berlarutan, rujuk simptom khusus seperti cirit-birit, bengkak, atau luka untuk rawatan ubat yang tepat."
+        )
+    elif any(k in soalan for k in ["tanaman", "pokok", "baja", "buah", "sayur", "daun"]):
+        balasan = (
+            f"🌱 **Panduan Pertanian & Tanaman:**\n"
+            f"Mengenai *'{message.text}'*:\n"
+            "1. **Cahaya & Air:** Pastikan tanaman mendapat pancaran matahari yang cukup dan pengaliran air yang baik (tidak bertakung).\n"
+            "2. **Pembajaan:** Gunakan baja yang mengikut peringkat umur pokok (baja pertumbuhan atau baja buah).\n"
+            "3. **Kawalan Perosak:** Periksa bahagian daun atau akar jika ada tanda serangan serangga atau kulat."
+        )
+    else:
+        balasan = (
+            f"🤖 Baik Wan, mengenai soalan *'{message.text}'*:\n\n"
+            "Sebagai Doktor Unggas, Ternakan & Tanaman, saya bersedia membantu anda. Sila ajukan pertanyaan yang lebih spesifik mengenai ayam, itik, puyuh, lembu, kambing, atau apa jua jenis tanaman!"
+        )
 
-    bot.reply_to(message, balasan, parse_mode="Markdown")
+    bot.reply_to(message, balasan)
 
 if __name__ == "__main__":
     bot.remove_webhook()
