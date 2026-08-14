@@ -1,15 +1,23 @@
 import os
 import telebot
-from flask import Flask
-import threading
+from flask import Flask, request
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
+RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
+
 @app.route('/')
 def home():
-    return "Bot Long Polling Aktif!"
+    return "Bot Doctor Unggas Aktif!"
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+def receive_message():
+    json_str = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "!", 200
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -18,25 +26,18 @@ def handle_message(message):
     
     teks = message.text.lower()
     if "sakit mata" in teks or "mata" in teks:
-        balasan = "Bagi kes ayam sakit mata, cuci mata ayam dengan air garam cair atau ubat titik mata antiseptik, serta asingkan ayam yang sakit supaya tak berjangkit."
+        balasan = "Bagi kes ayam sakit mata, cuci mata ayam dengan air garam cair atau ubat titik mata antiseptik, serta asingkan ayam yang sakit."
     elif "ayam" in teks:
         balasan = "Untuk kesihatan ayam, pastikan reban sentiasa kering, bersih, dan diberi makanan berkhasiat."
     else:
-        balasan = f"Doktor Unggas & Tanaman terima mesej: '{message.text}'."
+        balasan = f"Doktor Unggas terima mesej: '{message.text}'."
 
     bot.reply_to(message, balasan)
 
-def run_polling():
-    try:
-        bot.remove_webhook()
-        bot.infinity_polling(timeout=60, long_polling_timeout=60)
-    except Exception as e:
-        print(f"Polling error: {e}")
-
 if __name__ == "__main__":
-    # Jalankan polling dalam latar belakang
-    threading.Thread(target=run_polling, daemon=True).start()
+    # Padam polling lama dan set webhook rasmi
+    bot.remove_webhook()
+    bot.set_webhook(url=RENDER_URL + TOKEN)
     
-    # Jalankan Flask untuk pastikan Render tidak tutup servis
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
