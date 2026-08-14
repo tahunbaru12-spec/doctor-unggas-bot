@@ -20,44 +20,51 @@ def receive_message():
     bot.process_new_updates([update])
     return "!", 200
 
-@bot.message_handler(content_types=['photo'])
-def handle_photo(message):
+@bot.message_handler(content_types=['photo', 'text'])
+def handle_all(message):
     try:
-        # Dapatkan fail gambar paling jelas
-        file_id = message.photo[-1].file_id
-        file_info = bot.get_file(file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-
-        # Kecilkan saiz gambar (resize) supaya tidak kena ralat saiz
-        img = Image.open(io.BytesIO(downloaded_file))
-        img.thumbnail((800, 800)) # Hadkan saiz supaya selamat
-        buffered = io.BytesIO()
-        img.save(buffered, format="JPEG")
-        img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
-        prompt = message.caption if message.caption else "Analisis penyakit haiwan dalam gambar ini dan berikan ubat."
+        prompt = message.caption if message.caption else message.text
+        if not prompt: prompt = "Berikan nasihat pakar."
 
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-        payload = {
-            "model": "llama-3.2-11b-vision-preview",
-            "messages": [{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": f"Anda doktor pakar haiwan. Berdasarkan gambar: {prompt}"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"}}
-                ]
-            }]
-        }
         
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-        balasan = response.json()["choices"][0]["message"]["content"]
-        bot.reply_to(message, balasan)
+        # Jika ada gambar, proses guna Vision
+        if message.content_type == 'photo':
+            file_id = message.photo[-1].file_id
+            file_info = bot.get_file(file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            img = Image.open(io.BytesIO(downloaded_file))
+            img.thumbnail((512, 512)) 
+            buffered = io.BytesIO()
+            img.save(buffered, format="JPEG")
+            img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
+            payload = {
+                "model": "llama-3.2-11b-vision-preview",
+                "messages": [{"role": "user", "content": [
+                    {"type": "text", "text": f"Anda doktor pakar. Analisis: {prompt}"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
+                ]}]
+            }
+        else:
+            # Jika teks sahaja
+            payload = {
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}]
+            }
+
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+        data = response.json()
         
+        if "choices" in data:
+            bot.reply_to(message, data["choices"][0]["message"]["content"])
+        else:
+            bot.reply_to(message, f"Ralat: {str(data)}")
+            
     except Exception as e:
-        bot.reply_to(message, f"Ralat AI Vision: {str(e)}")
+        bot.reply_to(message, f"Error: {str(e)}")
 
 if __name__ == "__main__":
     bot.remove_webhook()
     bot.set_webhook(url=RENDER_URL + TOKEN)
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
