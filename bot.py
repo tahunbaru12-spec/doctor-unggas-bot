@@ -26,41 +26,44 @@ def handle_message(message):
     
     teks = message.text.lower()
     
-    # Jawapan bijak dan terperinci untuk pelbagai situasi ayam & tanaman
-    if "sakit mata" in teks or "mata" in teks:
+    # 1. Topik Ayam: Sakit Mata
+    if any(k in teks for k in ["sakit mata", "mata", "bengkak mata"]):
         balasan = (
             "🩺 **Rawatan Mata Ayam Sakit:**\n"
             "1. Cuci mata ayam menggunakan air garam cair (suam kuku) atau ubat titik mata antiseptik (seperti Terra-Cortril).\n"
             "2. Asingkan ayam yang sakit dari kawan-kawannya untuk elakkan jangkitan.\n"
-            "3. Pastikan reban tidak berhabuk dan bebas daripada tahi yang bergas ammonia tinggi."
+            "3. Pastikan reban tidak berhabuk dan bebas daripada tahi bergas ammonia tinggi."
         )
-    elif "kurang bertelur" in teks or "tak bertelur" in teks:
+    # 2. Topik Ayam: Telur
+    elif any(k in teks for k in ["telur", "bertelur", "penelur", "hasil"]):
         balasan = (
-            "🥚 **Tips Tingkatkan Hasil Telur Ayam:**\n"
-            "1. **Makanan Berkhasiat:** Berikan dedak penelur (*layer feed*) yang tinggi kalsium dan protein.\n"
-            "2. **Cahaya Cukup:** Ayam butuh sekurang-kurangnya 14 jam cahaya sehari untuk merangsang pengeluaran telur.\n"
-            "3. **Kesihatan & Vitamin:** Berikan tambahan vitamin B-Complex atau serbuk kulit kerang dalam makanan.\n"
-            "4. **Kurangkan Stres:** Pastikan reban tenang, tidak diganggu pemangsa, dan bebas kutu."
+            "🥚 **Tips Supaya Ayam Rajin & Banyak Bertelur:**\n"
+            "1. **Makanan Berkualiti:** Berikan dedak khusus penelur (*layer feed*) dicampur jagung hancur.\n"
+            "2. **Cahaya Cukup:** Ayam memerlukan sekurang-kurangnya 14 jam cahaya untuk merangsang hormon telur.\n"
+            "3. **Vitamin & Kalsium:** Tambah serbuk kulit kerang atau vitamin penelur dalam air minuman.\n"
+            "4. **Persekitaran Tenang:** Sediakan sarang bertelur yang gelap, selesa, bersih, dan bebas kutu."
         )
-    elif "rajin bertelur" in teks or "banyak telur" in teks:
+    # 3. Topik Tanaman: Pokok Pisang / Berbuah
+    elif any(k in teks for k in ["pisang", "berbuah", "buah", "pokok"]):
         balasan = (
-            "🌟 **Cara Kekalkan Ayam Rajin Bertelur:**\n"
-            "• Beri dedak khusus penelur campuran jagung hancur.\n"
-            "• Sediakan air bersih secukupnya setiap hari (tambah vitamin penelur jika ada).\n"
-            "• Sediakan sarang bertelur yang gelap, selesa, dan bersih agar ayam selesa bertelur di tempatnya."
+            "🍌 **Tips Penjagaan Pokok Pisang Supaya Lebat & Cepat Berbuah:**\n"
+            "1. **Pangkas Anak Pokok:** Tinggalkan hanya 3 anak pokok sepokok (ibu, anak besar, dan cucu) supaya nutrien tidak berebut.\n"
+            "2. **Baja Berkalium Tinggi:** Berikan baja organik atau baja buah (NPK 12-12-17 atau baja tahi ayam) secara berkala.\n"
+            "3. **Pembersihan Pelepah:** Buang pelepah kering di bawah supaya pancaran matahari terkena penuh pada batang dan jantung.\n"
+            "4. **Air Secukupnya:** Pastikan tanah lembap tetapi tidak bertakung air."
         )
-    elif "makanan" in teks or "dedak" in teks:
+    # 4. Topik Umum Makanan/Baja
+    elif any(k in teks for k in ["makanan", "dedak", "makan", "pakan", "baja"]):
         balasan = (
-            "🌽 **Panduan Pemakanan Unggas:**\n"
-            "• Anak ayam (Starter): Dedak tinggi protein (1-4 minggu).\n"
-            "• Ayam dewasa/penelur: Campuran dedak penelur, jagung hancur, dan dedak padi secukupnya.\n"
-            "• Pastikan bekas makanan sentiasa kering dan tiada kulat."
+            "🌱 **Panduan Umum Unggas & Tanaman:**\n"
+            "• Bagi ternakan: Pastikan makanan bersih, kering, dan bernutrisi.\n"
+            "• Bagi tanaman: Pastikan pencahayaan matahari mencukupi dan pembajaan dibuat mengikut jadual.\n"
+            "• Ada soalan khusus tentang penyakit ayam atau tanaman tertentu? Boleh terus tanya!"
         )
     else:
         balasan = (
-            f"🤖 Soalan bagus: '{message.text}'\n\n"
-            "Sebagai Doktor Unggas & Tanaman, saya sarankan agar pemakanan, kebersihan reban, dan vaksinasi dijaga rapi. "
-            "Ada apa-apa masalah spesifik mengenai penyakit ayam atau tanaman yang Wan ingin tanyakan lagi?"
+            f"🤖 Baik Wan, mengenai '{message.text}':\n\n"
+            "Sebagai Doktor Unggas & Tanaman, saya sedia membantu! Coba tanyakan hal berkaitan 'penyakit ayam', 'nak banyak telur', atau 'cara lebatkan buah pisang'."
         )
 
     bot.reply_to(message, balasan)
