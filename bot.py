@@ -1,17 +1,12 @@
 import os
 import telebot
 from flask import Flask, request
-import requests
-import json
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-
-# Token/Pin yang Wan berikan
-USER_API_KEY = "AQ.Ab8RN6KnGgESJg0FtMIPy7sqrfgjvQlJrZuUwoh35UF7oiFGhQ"
 
 @app.route('/')
 def home():
@@ -24,39 +19,57 @@ def receive_message():
     bot.process_new_updates([update])
     return "!", 200
 
-@bot.message_handler(func=lambda message: True)
+@app.message_handler(func=lambda message: True)
 def handle_message(message):
     if not message.text or message.text.startswith('/'):
         return
     
-    # Respons pintar merangkumi semua jenis unggas (puyuh, ayam, itik) dan tanaman
     teks = message.text.lower()
     
-    if any(k in teks for k in ["puyuh", "burung"]):
+    # 1. Topik Ayam Sakit Kaki / Lumpuh
+    if any(k in teks for k in ["sakit kaki", "lumpuh", "pincang", "bengkak kaki"]):
+        balasan = (
+            "🐔 **Rawatan Ayam Sakit Kaki / Pincang:**\n"
+            "1. **Asingkan Reban:** Letakkan ayam di tempat beralas lembut (seperti jerami) supaya kakinya tidak terbeban.\n"
+            "2. **Ubat & Vitamin:** Berikan vitamin B-Complex atau minyak ikan untuk menguatkan sendi dan saraf.\n"
+            "3. **Periksa Tapak:** Lihat jika ada luka atau bengkak bernanah (*bumblefoot*). Cuci bersih jika ada luka."
+        )
+    # 2. Topik Burung Puyuh
+    elif any(k in teks for k in ["puyuh", "burung"]):
         balasan = (
             "🐦 **Panduan Penternakan Burung Puyuh:**\n"
             "1. **Makanan:** Berikan dedak pemula (*starter*) berprotein tinggi untuk anak puyuh dan dedak penelur untuk puyuh dewasa.\n"
-            "2. **Suhu Reban:** Pastikan anak puyuh mendapat haba yang cukup pada minggu pertama.\n"
-            "3. **Kebersihan:** Reban puyuh cepat berbau, jadi cuci alas dan kekalkan pengudaraan yang baik."
+            "2. **Suhu & Lampu:** Pastikan anak puyuh mendapat haba yang cukup pada peringkat awal.\n"
+            "3. **Kebersihan:** Cuci lantai reban kerap kerana najis puyuh cepat menghasilkan gas ammonia."
         )
-    elif any(k in teks for k in ["ayam", "itik", "angsa"]):
+    # 3. Topik Itik & Angsa
+    elif any(k in teks for k in ["itik", "angsa", "mencit"]):
         balasan = (
-            "🐔 **Panduan Penternakan Unggas (Ayam/Itik):**\n"
-            "1. Pastikan air minuman sentiasa bersih dan dicampur vitamin jika perlu.\n"
-            "2. Kawal kebersihan reban untuk elakkan penyakit kutu, batuk, atau sakit mata.\n"
-            "3. Berikan makanan seimbang mengikut peringkat umur ternakan."
+            "🦆 **Panduan Penternakan Itik & Unggas Air:**\n"
+            "1. **Air Minuman:** Pastikan air sentiasa ada kerana itik perlu basahkan paruh dan rongga hidung semasa makan.\n"
+            "2. **Kawasan Mandi:** Sediakan bekas air yang cukup luas untuk mereka bersihkan diri.\n"
+            "3. **Makanan:** Boleh campurkan dedak dengan dedak jagung atau sisa sayuran."
         )
-    elif any(k in teks for k in ["tanaman", "pokok", "sayur", "buah", "baja", "cili", "sawit", "getah"]):
+    # 4. Topik Ayam secara umum / Sakit Mata
+    elif any(k in teks for k in ["ayam", "sakit mata", "telur", "berak"]):
+        balasan = (
+            "🐓 **Panduan Kesihatan Ayam:**\n"
+            "1. **Air & Vitamin:** Pastikan air minuman dicampur vitamin atau sedikit elektrolit.\n"
+            "2. **Kawalan Penyakit:** Jika ada yang sakit mata, cuci dengan air garam suam kuku dan asingkan segera.\n"
+            "3. **Makanan Seimbang:** Berikan dedak pencakar atau dedak penelur mengikut keperluan."
+        )
+    # 5. Topik Pelbagai Tanaman (Cili, Sayur, Buah, Sawit, Getah)
+    elif any(k in teks for k in ["tanaman", "pokok", "sayur", "buah", "baja", "cili", "sawit", "getah", "mangga", "kelapa", "pisang"]):
         balasan = (
             "🌱 **Panduan Pertanian & Tanaman:**\n"
-            "1. **Pencahayaan:** Pastikan pokok mendapat cahaya matahari secukupnya.\n"
-            "2. **Pembajaan:** Gunakan baja yang bersesuaian (baja pertumbuhan atau baja buah/bunga).\n"
-            "3. **Air & Saliran:** Pastikan tanah lembap tetapi air tidak bertakung di pangkal pokok untuk elakkan akar busuk."
+            "1. **Cahaya & Air:** Pastikan tanaman mendapat cahaya matahari penuh dan siraman air yang konsisten (tidak terlalu basah).\n"
+            "2. **Pembajaan:** Gunakan baja tumbesaran (tinggi Nitrogen) untuk pokok muda, dan baja buah/bunga (tinggi Kalium & Fosforus) untuk pokok berbuah.\n"
+            "3. **Kawalan Perosak:** Lakukan semburan cuka kayu atau racun organik jika diserang serangga perosak."
         )
     else:
         balasan = (
             f"🤖 Baik Wan, mengenai '{message.text}':\n\n"
-            "Sebagai Doktor Unggas & Tanaman, saya sedia bantu pelbagai jenis ternakan (ayam, itik, puyuh) dan tanaman (sayur, buah, pokok). Cuba tanya soalan yang lebih spesifik!"
+            "Sebagai Doktor Unggas & Tanaman, saya boleh bantu jawab soalan berkaitan ayam, itik, burung puyuh, serta pelbagai jenis tanaman. Cuba tanyakan masalah yang lebih terperinci!"
         )
 
     bot.reply_to(message, balasan)
