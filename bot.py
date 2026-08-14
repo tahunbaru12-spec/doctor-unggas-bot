@@ -1,6 +1,7 @@
 import os
 import telebot
 import requests
+import base64
 from flask import Flask, request
 
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
@@ -8,12 +9,14 @@ bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-
 GROQ_API_KEY = "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"
+
+# Simpan sejarah perbualan sementara untuk gambar terakhir
+last_image_base64 = None
 
 @app.route('/')
 def home():
-    return "Bot Groq Vision AI Aktif!"
+    return "Bot Groq Vision AI Sebenar Aktif!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -22,46 +25,42 @@ def receive_message():
     bot.process_new_updates([update])
     return "!", 200
 
-# Fungsi mengendalikan mesej teks biasa
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    global last_image_base64
+    try:
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        
+        # Tukar imej kepada format base64 supaya model Vision Groq boleh baca terus
+        last_image_base64 = base64.b64encode(downloaded_file).decode('utf-8')
+        
+        kapsyen_pengguna = message.caption if message.caption else "Tolong analisis penyakit haiwan/tanaman dalam gambar ini dan berikan cadangan ubat yang spesifik."
+        
+        # Hantar imej dan soalan terus ke Groq Vision API
+        balasan = hantar_vision_ke_groq(kapsyen_pengguna, last_image_base64)
+    except Exception as e:
+        balasan = f"Ralat memproses imej: {str(e)}"
+        
+    bot.reply_to(message, balasan)
+
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
+    global last_image_base64
     if message.text.startswith('/'):
         return
     
     soalan_wan = message.text
-    balasan = hantar_ke_groq(soalan_wan, image_url=None)
-    bot.reply_to(message, balasan)
-
-# Fungsi mengendalikan mesej bergambar (Vision AI)
-@bot.message_handler(content_types=['photo'])
-def handle_photo(message):
-    try:
-        # Ambil maklumat gambar resolusi tertinggi yang dihantar
-        file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        
-        # Simpan sementara gambar di pelayan Render
-        temp_image_path = "temp_photo.jpg"
-        with open(temp_image_path, "wb") as f:
-            f.write(downloaded_file)
-            
-        # Nota: Groq Vision memerlukan imej diakses melalui URL awam atau Base64. 
-        # Oleh kerana bot di Telegram, kita gunakan penerangan teks alternatif berserta analisis visual pintar.
-        kapsyen = message.caption if message.caption else "Tolong tengok gambar haiwan/tanaman ini dan berikan diagnosis penyakit serta rawatan."
-        
-        balasan = (
-            f"📸 **Analisis Gambar & Visual AI:**\n"
-            f"Mengenai gambar yang Wan hantar (*Kapsyen: {kapsyen}*):\n"
-            "1. **Pemerhatian Simptom:** Berdasarkan ciri fizikal yang kelihatan pada imej (seperti masalah pada bahagian mata, bulu, kulit, atau lendir), ini menunjukkan tanda jangkitan bakteria/kulat atau masalah kekurangan nutrisi.\n"
-            "2. **Langkah Rawatan Awal:** Sila asingkan haiwan/tanaman yang terjejas segera, pastikan kawasan sekitar kering, bersih, dan bebas daripada lembapan tinggi.\n"
-            "3. **Cadangan Ubat:** Dapatkan nasihat produk antiseptik Luaran atau vitamin sokongan sekiranya keadaan berlarutan."
-        )
-    except Exception as e:
-        balasan = f"Maaf Wan, ralat memproses gambar: {str(e)}"
+    
+    # Jika pengguna ada hantar gambar sebelum ni, sertakan sekali imej untuk dijawab oleh AI
+    if last_image_base64:
+        balasan = hantar_vision_ke_groq(soalan_wan, last_image_base64)
+    else:
+        balasan = hantar_teks_ke_groq(soalan_wan)
         
     bot.reply_to(message, balasan)
 
-def hantar_ke_groq(prompt_teks, image_url=None):
+def hantar_vision_ke_groq(prompt_teks, img_base64):
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -72,7 +71,53 @@ def hantar_ke_groq(prompt_teks, image_url=None):
         "messages": [
             {
                 "role": "system",
-                "content": "Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia yang arif merawat ayam, itik, lembu, kambing, dan tanaman. Jawab secara profesional dalam bahasa Melayu."
+                "content": "Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia yang sangat arif merawat ayam, itik, lembu, kambing, arnab, dan tanaman. Berikan nama penyakit yang tepat serta senarai ubat/rawatan spesifik dalam bahasa Melayu secara mesra dan terperinci."
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt_teks
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{img_base64}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "temperature": 0.4,
+        "max_tokens": 1024
+    }
+    
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json()["choices"][0]["message"]["content"]
+        else:
+            return f"Ralat pelayan Vision ({response.status_code}): Sila cuba sebentar lagi."
+    except Exception as e:
+        return f"Ralat sambungan Vision: {str(e)}"
+
+def hantar_teks_ke_groq(prompt_teks):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia. Jawab dalam bahasa Melayu."
             },
             {
                 "role": "user",
@@ -80,7 +125,6 @@ def hantar_ke_groq(prompt_teks, image_url=None):
             }
         ]
     }
-    
     try:
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -91,9 +135,9 @@ def hantar_ke_groq(prompt_teks, image_url=None):
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:
-            return "Maaf Wan, pelayan AI sedang sibuk memproses."
+            return "Maaf Wan, pelayan AI sedang sibuk."
     except Exception as e:
-        return f"Ralat sambungan: {str(e)}"
+        return f"Ralat: {str(e)}"
 
 if __name__ == "__main__":
     bot.remove_webhook()
