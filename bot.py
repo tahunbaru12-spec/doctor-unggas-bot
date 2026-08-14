@@ -9,7 +9,8 @@ app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
-GROQ_API_KEY = "gsk_MCqDF8xo5IVP..."
+# Kunci Direct AI Groq baharu Wan
+GROQ_API_KEY = "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"
 
 @app.route('/')
 def home():
@@ -34,7 +35,6 @@ def handle_message(message):
         "Content-Type": "application/json"
     }
     
-    # Ditukar kepada model kepantasan tinggi Groq yang sangat stabil
     payload = {
         "model": "llama-3.1-8b-instant",
         "messages": [
