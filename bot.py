@@ -9,7 +9,6 @@ app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
 
-# Kunci Direct AI Groq Wan
 GROQ_API_KEY = "gsk_MCqDF8xo5IVP..."
 
 @app.route('/')
@@ -35,12 +34,13 @@ def handle_message(message):
         "Content-Type": "application/json"
     }
     
+    # Ditukar kepada model kepantasan tinggi Groq yang sangat stabil
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": "llama-3.1-8b-instant",
         "messages": [
             {
                 "role": "system",
-                "content": "Anda adalah Doktor Pakar Haiwan, Ternakan, dan Pertanian Malaysia. Anda arif tentang ayam, itik, puyuh, lembu, kambing, dan semua jenis tanaman. Jawab soalan pengguna secara terus, terperinci, dan mesra dalam bahasa Melayu tanpa sebarang jawapan teks dalam kod."
+                "content": "Anda adalah Doktor Pakar Haiwan, Ternakan, dan Pertanian Malaysia. Anda arif tentang ayam, itik, puyuh, lembu, kambing, arnab, dan semua jenis tanaman. Jawab soalan pengguna secara terus, terperinci, dan mesra dalam bahasa Melayu tanpa sebarang jawapan teks dalam kod."
             },
             {
                 "role": "user",
@@ -54,14 +54,14 @@ def handle_message(message):
             "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
             json=payload,
-            timeout=20
+            timeout=25
         )
         
         if response.status_code == 200:
             hasil = response.json()
             balasan = hasil["choices"][0]["message"]["content"]
         else:
-            balasan = "Maaf Wan, pelayan AI sedang sibuk. Cuba tanya sebentar lagi ya!"
+            balasan = f"Ralat pelayan ({response.status_code}): Sila cuba sebentar lagi."
     except Exception as e:
         balasan = f"Ralat sambungan AI: {str(e)}"
 
