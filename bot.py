@@ -10,13 +10,13 @@ import io
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
 
-# Token Telegram & API Key Groq
+# Token Telegram & API Key Groq Baru
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -28,10 +28,6 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text'])
 def handle_all(message):
     try:
-        # Semak chat ID semasa mesej masuk jika perlu
-        chat_id = message.chat.id
-        user_id = message.from_user.id
-        
         prompt = message.caption if message.caption else message.text
         if not prompt: prompt = "Berikan nasihat pakar."
 
