@@ -33,15 +33,13 @@ def handle_all(message):
 
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         
-        # Jika ada gambar atau teks, kita guna model standard yang pasti aktif
         if message.content_type == 'photo':
-            # Hantar teks analisis berserta makluman imej diterima
             text_prompt = f"Pengguna menghantar gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk berikan diagnosis dan ubat yang tepat."
         else:
             text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara terperinci: {prompt}"
 
         payload = {
-            "model": "llama3-8b-8192",
+            "model": "llama-3.1-8b-instant",
             "messages": [{"role": "user", "content": text_prompt}]
         }
 
