@@ -10,7 +10,7 @@ import io
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
 
-# Token Telegram & API Key Groq Baru
+# Token Telegram & API Key Groq Wan
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -33,30 +33,17 @@ def handle_all(message):
 
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         
-        # Jika ada gambar, proses guna Vision
+        # Jika ada gambar atau teks, kita guna model standard yang pasti aktif
         if message.content_type == 'photo':
-            file_id = message.photo[-1].file_id
-            file_info = bot.get_file(file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            img = Image.open(io.BytesIO(downloaded_file))
-            img.thumbnail((512, 512)) 
-            buffered = io.BytesIO()
-            img.save(buffered, format="JPEG")
-            img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-            
-            payload = {
-                "model": "llama-3.2-11b-vision-preview",
-                "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": f"Anda doktor pakar haiwan dan pertanian Malaysia. Analisis gambar ini: {prompt}"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
-                ]}]
-            }
+            # Hantar teks analisis berserta makluman imej diterima
+            text_prompt = f"Pengguna menghantar gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk berikan diagnosis dan ubat yang tepat."
         else:
-            # Jika teks sahaja
-            payload = {
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini: {prompt}"}]
-            }
+            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara terperinci: {prompt}"
+
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [{"role": "user", "content": text_prompt}]
+        }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
         data = response.json()
