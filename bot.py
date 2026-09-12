@@ -6,6 +6,11 @@ import base64
 from PIL import Image
 import io
 
+# Konfigurasi ID Telegram Wan
+ADMIN_USER_ID = 8719826950
+TARGET_CHAT_ID = -1003572908909
+
+# Token Telegram & API Key Groq
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -23,6 +28,10 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text'])
 def handle_all(message):
     try:
+        # Semak chat ID semasa mesej masuk jika perlu
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
         prompt = message.caption if message.caption else message.text
         if not prompt: prompt = "Berikan nasihat pakar."
 
@@ -42,7 +51,7 @@ def handle_all(message):
             payload = {
                 "model": "llama-3.2-11b-vision-preview",
                 "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": f"Anda doktor pakar. Analisis: {prompt}"},
+                    {"type": "text", "text": f"Anda doktor pakar haiwan dan pertanian Malaysia. Analisis gambar ini: {prompt}"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
                 ]}]
             }
@@ -50,7 +59,7 @@ def handle_all(message):
             # Jika teks sahaja
             payload = {
                 "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}]
+                "messages": [{"role": "user", "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini: {prompt}"}]
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
