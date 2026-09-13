@@ -3,8 +3,6 @@ import telebot
 from flask import Flask, request
 import requests
 import base64
-from PIL import Image
-import io
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -31,17 +29,39 @@ def handle_all(message):
 
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         
+        # Jika pengguna hantar gambar
         if message.content_type == 'photo':
-            text_prompt = f"Pengguna menghantar gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk berikan diagnosis dan ubat yang tepat."
+            # Ambil gambar kualiti tertinggi
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
+            
+            payload = {
+                "model": "llama-3.2-11b-vision-preview",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": f"Anda doktor pakar haiwan dan pertanian Malaysia. Analisis gambar ini dan jawab mesej ini: {prompt}"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
+                        ]
+                    }
+                ],
+                "max_tokens": 1000
+            }
         else:
-            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
+            # Jika pengguna hantar teks biasa
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {
+                        "role": "user", 
+                        "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jika ditanya tentang pembekal atau tempat beli, berikan panduan umum cara mencari atau senaraikan platform lazim di Malaysia. Jawab secara ringkas dan padat: {prompt}"
+                    }
+                ]
+            }
 
-        payload = {
-            "model": "openai/gpt-oss-20b",
-            "messages": [{"role": "user", "content": text_prompt}]
-        }
-
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
         data = response.json()
         
         if "choices" in data:
