@@ -24,7 +24,7 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan yang ringkas, padat, dan terus kepada cara rawatan."
+        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan yang lengkap, terperinci, teratur, dan terus kepada cara rawatan."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -48,7 +48,7 @@ def handle_all(message):
                         ]
                     }
                 ],
-                "max_tokens": 500
+                "max_tokens": 1000
             }
         else:
             user_text = message.text if message.content_type == 'text' else "Nasihat pakar."
@@ -58,7 +58,7 @@ def handle_all(message):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_text}
                 ],
-                "max_tokens": 500
+                "max_tokens": 1000
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
