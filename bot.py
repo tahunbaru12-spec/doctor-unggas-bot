@@ -24,7 +24,12 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Arahan Penting: Jawab HANYA dalam Bahasa Melayu bermula dari patah perkataan pertama. Dilarang sama sekali menggunakan Bahasa Inggeris. Anda adalah doktor pakar haiwan dan pertanian Malaysia."
+        system_prompt = (
+            "ARAHAN UTAMA: Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia yang sangat berpengalaman. "
+            "Anda MESTI menjawab sepenuhnya dalam BAHASA MELAYU tulen bermula dari patah perkataan pertama. "
+            "Jangan gunakan sebarang perkataan Inggeris di permulaan jawapan. "
+            "Berikan nasihat, rujukan web, diagnosis imej dan kaedah rawatan yang terperinci serta mesra."
+        )
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -35,32 +40,33 @@ def handle_all(message):
         if not user_text:
             user_text = "Berikan nasihat pakar pertanian dan haiwan."
 
+        # Menggunakan sistem pintar groq/compound untuk carian web & imej serentak
         if message.content_type == 'photo':
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
             encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
             
             payload = {
-                "model": "qwen/qwen3.6-27b",
+                "model": "groq/compound",
                 "messages": [
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: Jawab dalam Bahasa Melayu - {user_text}"},
+                            {"type": "text", "text": f"{system_prompt}\n\n[Sila jawab sepenuhnya dalam Bahasa Melayu]: {user_text}"},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
                         ]
                     }
                 ],
-                "max_tokens": 1000
+                "max_tokens": 1200
             }
         else:
             payload = {
-                "model": "qwen/qwen3.6-27b",
+                "model": "openai/gpt-oss-120b",
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Jawab dalam Bahasa Melayu: {user_text}"}
+                    {"role": "user", "content": user_text}
                 ],
-                "max_tokens": 1000
+                "max_tokens": 1200
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
