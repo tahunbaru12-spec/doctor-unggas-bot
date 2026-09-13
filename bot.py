@@ -1,8 +1,8 @@
 import os
 import telebot
 from flask import Flask, request
-import requests
-import base64
+from google import genai
+from google.genai import types
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -12,7 +12,10 @@ bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-GROQ_API_KEY = "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"
+
+# Kunci API Gemini Wan dimasukkan di sini
+GEMINI_API_KEY = "AQ.Ab8RN6IsGtHfk4rJN9JZr0kepqGVL7bMgFpIGz7SsDh0-Tw8fg"
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -21,56 +24,73 @@ def receive_message():
     bot.process_new_updates([update])
     return "!", 200
 
-@bot.message_handler(content_types=['photo', 'text'])
+@bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        prompt = message.caption if message.caption else message.text
-        if not prompt: prompt = "Berikan nasihat pakar."
-
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+        system_instruction = "Anda adalah doktor pakar haiwan dan pertanian Malaysia. Bantu berikan diagnosis, nasihat, serta cari pautan atau maklumat laman web yang berkaitan jika diminta oleh pengguna secara mesra dan tepat."
         
-        # Jika pengguna hantar gambar
-        if message.content_type == 'photo':
+        # 1. Jika Wan hantar mesej suara (Voice Note)
+        if message.content_type == 'voice':
+            file_info = bot.get_file(message.voice.file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    types.Part.from_bytes(
+                        data=downloaded_file,
+                        mime_type='audio/ogg',
+                    ),
+                    "Dengar mesej suara ini dan bertindak sebagai doktor pakar haiwan dan pertanian Malaysia untuk berikan jawapan."
+                ],
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    tools=[{"google_search": {}}]
+                )
+            )
+            balasan = response.text
+
+        # 2. Jika Wan hantar gambar
+        elif message.content_type == 'photo':
+            prompt = message.caption if message.caption else "Analisis gambar ini."
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
-            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
             
-            payload = {
-                "model": "llama-3.2-11b-vision-preview",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": f"Anda doktor pakar haiwan dan pertanian Malaysia. Analisis gambar ini dan jawab mesej ini: {prompt}"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
-                        ]
-                    }
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    types.Part.from_bytes(
+                        data=downloaded_file,
+                        mime_type='image/jpeg',
+                    ),
+                    f"Bertindak sebagai doktor pakar haiwan dan pertanian Malaysia. Analisis gambar ini dan jawab soalan ini: {prompt}"
                 ],
-                "max_tokens": 1000
-            }
-        else:
-            # Jika pengguna hantar teks biasa (guna model vision yang sama agar tiada ralat model_not_found)
-            payload = {
-                "model": "llama-3.2-11b-vision-preview",
-                "messages": [
-                    {
-                        "role": "user", 
-                        "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
-                    }
-                ],
-                "max_tokens": 1000
-            }
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    tools=[{"google_search": {}}]
+                )
+            )
+            balasan = response.text
 
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
-        data = response.json()
-        
-        if "choices" in data:
-            balasan = data["choices"][0]["message"]["content"]
-            if len(balasan) > 4000:
-                balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
-            bot.reply_to(message, balasan)
+        # 3. Jika Wan hantar teks biasa
         else:
-            bot.reply_to(message, f"Ralat: {str(data)}")
+            prompt = message.text
+            if not prompt: prompt = "Berikan nasihat pakar."
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    tools=[{"google_search": {}}]
+                )
+            )
+            balasan = response.text
+
+        if len(balasan) > 4000:
+            balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
+            
+        bot.reply_to(message, balasan)
             
     except Exception as e:
         bot.reply_to(message, f"Error: {str(e)}")
