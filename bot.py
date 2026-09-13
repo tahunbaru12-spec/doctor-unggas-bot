@@ -24,7 +24,7 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan tepat, lengkap, rujuk maklumat web jika perlu, dan analisis imej dengan terperinci."
+        system_prompt = "PERINGATAN KRITIKAL: Anda adalah doktor pakar haiwan dan pertanian Malaysia. Anda MESTI menjawab SEMUA soalan menggunakan BAHASA MELAYU Sahaja dari perkataan pertama hingga akhir. Jangan sekali-kali memulakan jawapan dalam Bahasa Inggeris. Berikan diagnosis, rujukan maklumat web, dan cara rawatan yang tepat."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -35,7 +35,6 @@ def handle_all(message):
         if not user_text:
             user_text = "Berikan nasihat pakar pertanian/haiwan."
 
-        # Menggunakan model Qwen vision yang menyokong gambar dan tool
         if message.content_type == 'photo':
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
@@ -47,7 +46,7 @@ def handle_all(message):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: {user_text}"},
+                            {"type": "text", "text": f"{system_prompt}\n\nSoalan pengguna: {user_text}"},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
                         ]
                     }
