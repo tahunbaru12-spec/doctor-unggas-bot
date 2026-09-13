@@ -24,16 +24,15 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda adalah doktor pakar haiwan dan pertanian Malaysia. Bantu berikan diagnosis, nasihat kesihatan haiwan/tanaman, serta cadangan maklumat rujukan yang tepat dan mesra."
+        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan yang ringkas, padat, dan terus kepada cara rawatan."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
             "Content-Type": "application/json"
         }
         
-        # 1. Jika pengguna hantar gambar (Menggunakan model Qwen Vision rasmi Groq)
         if message.content_type == 'photo':
-            caption = message.caption if message.caption else "Tolong analisis gambar ini dan berikan diagnosis atau panduan berkaitan."
+            caption = message.caption if message.caption else "Analisis gambar ini."
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
             encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
@@ -44,27 +43,22 @@ def handle_all(message):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\nSoalan/Keterangan pengguna: {caption}"},
+                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: {caption}"},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
                         ]
                     }
                 ],
-                "max_tokens": 1200
+                "max_tokens": 500
             }
-
-        # 2. Jika pengguna hantar teks biasa atau suara
         else:
-            user_text = message.text if message.content_type == 'text' else "Mesej suara diterima."
-            if not user_text: 
-                user_text = "Berikan nasihat pakar pertanian/haiwan."
-
+            user_text = message.text if message.content_type == 'text' else "Nasihat pakar."
             payload = {
                 "model": "qwen/qwen3.6-27b",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_text}
                 ],
-                "max_tokens": 1200
+                "max_tokens": 500
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
@@ -74,9 +68,6 @@ def handle_all(message):
             balasan = data["choices"][0]["message"]["content"]
         else:
             balasan = f"Ralat: {str(data)}"
-
-        if len(balasan) > 4000:
-            balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
             
         bot.reply_to(message, balasan)
             
