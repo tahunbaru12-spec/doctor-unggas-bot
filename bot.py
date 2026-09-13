@@ -1,4 +1,4 @@
-import os
+ import os
 import telebot
 from flask import Flask, request
 import requests
@@ -36,10 +36,10 @@ def handle_all(message):
         if message.content_type == 'photo':
             text_prompt = f"Pengguna menghantar gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk berikan diagnosis dan ubat yang tepat."
         else:
-            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara terperinci: {prompt}"
+            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
 
         payload = {
-            "model": "openai/gpt-oss-20b",
+            "model": "llama-3.1-8b-instant",
             "messages": [{"role": "user", "content": text_prompt}]
         }
 
@@ -47,7 +47,11 @@ def handle_all(message):
         data = response.json()
         
         if "choices" in data:
-            bot.reply_to(message, data["choices"][0]["message"]["content"])
+            balasan = data["choices"][0]["message"]["content"]
+            # Hadkan panjang mesej kepada 4000 aksara elak ralat Telegram
+            if len(balasan) > 4000:
+                balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
+            bot.reply_to(message, balasan)
         else:
             bot.reply_to(message, f"Ralat: {str(data)}")
             
