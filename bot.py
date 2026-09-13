@@ -31,16 +31,15 @@ def handle_all(message):
             "Content-Type": "application/json"
         }
         
-        # 1. Jika pengguna hantar gambar
+        # 1. Jika pengguna hantar gambar (Menggunakan model Qwen Vision rasmi Groq)
         if message.content_type == 'photo':
             caption = message.caption if message.caption else "Tolong analisis gambar ini dan berikan diagnosis atau panduan berkaitan."
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
             encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
             
-            # Menggunakan model Llama Vision yang menyokong pengecaman imej
             payload = {
-                "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                "model": "qwen/qwen3.6-27b",
                 "messages": [
                     {
                         "role": "user",
@@ -53,14 +52,14 @@ def handle_all(message):
                 "max_tokens": 1200
             }
 
-        # 2. Jika pengguna hantar suara atau teks biasa
+        # 2. Jika pengguna hantar teks biasa atau suara
         else:
             user_text = message.text if message.content_type == 'text' else "Mesej suara diterima."
             if not user_text: 
                 user_text = "Berikan nasihat pakar pertanian/haiwan."
 
             payload = {
-                "model": "llama-3.3-70b-versatile",
+                "model": "qwen/qwen3.6-27b",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_text}
