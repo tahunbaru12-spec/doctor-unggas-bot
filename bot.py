@@ -24,13 +24,7 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        # Arahan ketat agar bot langsung tidak memulakan ayat dengan English
-        system_prompt = (
-            "ARAHAN MUTLAK: Anda adalah doktor pakar haiwan dan pertanian Malaysia. "
-            "Anda MESTI menjawab sepenuhnya dalam BAHASA MELAYU. "
-            "DILARANG KERAS menggunakan sebarang perkataan Bahasa Inggeris pada permulaan jawapan atau di sepanjang ayat. "
-            "Mulakan terus jawapan anda dalam Bahasa Melayu yang mesra, tepat, dan profesional."
-        )
+        system_prompt = "Arahan Penting: Jawab HANYA dalam Bahasa Melayu bermula dari patah perkataan pertama. Dilarang sama sekali menggunakan Bahasa Inggeris. Anda adalah doktor pakar haiwan dan pertanian Malaysia."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -52,7 +46,7 @@ def handle_all(message):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\nSoalan pengguna: {user_text}"},
+                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: Jawab dalam Bahasa Melayu - {user_text}"},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
                         ]
                     }
@@ -64,7 +58,7 @@ def handle_all(message):
                 "model": "qwen/qwen3.6-27b",
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text}
+                    {"role": "user", "content": f"Jawab dalam Bahasa Melayu: {user_text}"}
                 ],
                 "max_tokens": 1000
             }
