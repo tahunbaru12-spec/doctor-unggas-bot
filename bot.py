@@ -2,6 +2,7 @@ import os
 import telebot
 from flask import Flask, request
 import requests
+import base64
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -23,34 +24,62 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        prompt = message.caption if message.caption else message.text
-        if not prompt: prompt = "Berikan nasihat pakar."
-
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+        system_prompt = "Anda adalah doktor pakar haiwan dan pertanian Malaysia. Bantu berikan diagnosis, nasihat kesihatan haiwan/tanaman, serta cadangan maklumat rujukan yang tepat dan mesra."
         
-        if message.content_type == 'photo':
-            text_prompt = f"Pengguna menghantar lampiran gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia, berikan panduan, diagnosis, atau nasihat berkaitan berdasarkan teks ini."
-        elif message.content_type == 'voice':
-            text_prompt = f"Pengguna menghantar mesej suara berkaitan: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk beri panduan."
-        else:
-            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
-
-        payload = {
-            "model": "openai/gpt-oss-20b",
-            "messages": [{"role": "user", "content": text_prompt}],
-            "max_tokens": 1000
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}", 
+            "Content-Type": "application/json"
         }
+        
+        # 1. Jika pengguna hantar gambar
+        if message.content_type == 'photo':
+            caption = message.caption if message.caption else "Tolong analisis gambar ini dan berikan diagnosis atau panduan berkaitan."
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
+            
+            # Menggunakan model Llama Vision yang menyokong pengecaman imej
+            payload = {
+                "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": f"{system_prompt}\n\nSoalan/Keterangan pengguna: {caption}"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
+                        ]
+                    }
+                ],
+                "max_tokens": 1200
+            }
 
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
+        # 2. Jika pengguna hantar suara atau teks biasa
+        else:
+            user_text = message.text if message.content_type == 'text' else "Mesej suara diterima."
+            if not user_text: 
+                user_text = "Berikan nasihat pakar pertanian/haiwan."
+
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_text}
+                ],
+                "max_tokens": 1200
+            }
+
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
         data = response.json()
         
         if "choices" in data:
             balasan = data["choices"][0]["message"]["content"]
-            if len(balasan) > 4000:
-                balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
-            bot.reply_to(message, balasan)
         else:
-            bot.reply_to(message, f"Ralat: {str(data)}")
+            balasan = f"Ralat: {str(data)}"
+
+        if len(balasan) > 4000:
+            balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
+            
+        bot.reply_to(message, balasan)
             
     except Exception as e:
         bot.reply_to(message, f"Error: {str(e)}")
