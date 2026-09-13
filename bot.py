@@ -2,7 +2,6 @@ import os
 import telebot
 from flask import Flask, request
 import requests
-import base64
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -24,42 +23,30 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan yang lengkap, terperinci, teratur, dan terus kepada cara rawatan."
+        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan tepat, lengkap, dan rujuk maklumat semasa dari web jika perlu."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
             "Content-Type": "application/json"
         }
         
+        user_text = message.text if message.text else message.caption
+        if not user_text:
+            user_text = "Berikan nasihat pakar pertanian/haiwan."
+
         if message.content_type == 'photo':
-            caption = message.caption if message.caption else "Analisis gambar ini."
-            file_info = bot.get_file(message.photo[-1].file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
-            
-            payload = {
-                "model": "qwen/qwen3.6-27b",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: {caption}"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
-                        ]
-                    }
-                ],
-                "max_tokens": 1000
-            }
-        else:
-            user_text = message.text if message.content_type == 'text' else "Nasihat pakar."
-            payload = {
-                "model": "qwen/qwen3.6-27b",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text}
-                ],
-                "max_tokens": 1000
-            }
+            user_text = f"Pengguna menghantar gambar dengan soalan: {user_text}. Sila buat carian web jika perlu untuk memberi maklumat rawatan tepat."
+
+        # Menggunakan model compound Groq yang mempunyai keupayaan carian web terbina dalam
+        payload = {
+            "model": "groq/compound",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_text}
+            ],
+            "tools": [{"type": "web_search"}],
+            "max_tokens": 1000
+        }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
         data = response.json()
