@@ -2,7 +2,6 @@ import os
 import telebot
 from flask import Flask, request
 import requests
-import base64
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -12,7 +11,7 @@ bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 RENDER_URL = "https://doctor-unggas-bot.onrender.com/"
-GEMINI_API_KEY = "AQ.Ab8RN6IsGtHfk4rJN9JZr0kepqGVL7bMgFpIGz7SsDh0-Tw8fg"
+GROQ_API_KEY = "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"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def receive_message():
@@ -24,77 +23,34 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_instruction = "Anda adalah doktor pakar haiwan dan pertanian Malaysia. Bantu berikan diagnosis, nasihat, serta cari pautan atau maklumat laman web yang berkaitan jika diminta oleh pengguna secara mesra dan tepat."
+        prompt = message.caption if message.caption else message.text
+        if not prompt: prompt = "Berikan nasihat pakar."
+
+        headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         
-        # Masukkan kunci terus dalam parameter URL endpoint
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-        headers = {'Content-Type': 'application/json'}
-
-        # 1. Jika Wan hantar gambar
         if message.content_type == 'photo':
-            prompt = message.caption if message.caption else "Analisis gambar ini."
-            file_info = bot.get_file(message.photo[-1].file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
-            
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": f"{system_instruction}. Analisis gambar ini dan jawab soalan ini: {prompt}"},
-                            {"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}}
-                        ]
-                    }
-                ],
-                "tools": [{"google_search": {}}]
-            }
-
-        # 2. Jika Wan hantar suara
+            text_prompt = f"Pengguna menghantar lampiran gambar dengan mesej: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia, berikan panduan, diagnosis, atau nasihat berkaitan berdasarkan teks ini."
         elif message.content_type == 'voice':
-            file_info = bot.get_file(message.voice.file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            encoded_audio = base64.b64encode(downloaded_file).decode('utf-8')
-            
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": f"{system_instruction}. Dengar mesej audio ini dan berikan jawapan."},
-                            {"inline_data": {"mime_type": "audio/ogg", "data": encoded_audio}}
-                        ]
-                    }
-                ],
-                "tools": [{"google_search": {}}]
-            }
-
-        # 3. Jika teks biasa
+            text_prompt = f"Pengguna menghantar mesej suara berkaitan: {prompt}. Bertindaklah sebagai doktor pakar haiwan dan pertanian Malaysia untuk beri panduan."
         else:
-            prompt = message.text
-            if not prompt: prompt = "Berikan nasihat pakar."
-            
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": f"{system_instruction}\n\nSoalan: {prompt}"}
-                        ]
-                    }
-                ],
-                "tools": [{"google_search": {}}]
-            }
+            text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
 
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        payload = {
+            "model": "openai/gpt-oss-20b",
+            "messages": [{"role": "user", "content": text_prompt}],
+            "max_tokens": 1000
+        }
+
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
         data = response.json()
         
-        if "candidates" in data:
-            balasan = data["candidates"][0]["content"]["parts"][0]["text"]
+        if "choices" in data:
+            balasan = data["choices"][0]["message"]["content"]
+            if len(balasan) > 4000:
+                balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
+            bot.reply_to(message, balasan)
         else:
-            balasan = f"Ralat API: {str(data)}"
-
-        if len(balasan) > 4000:
-            balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
-            
-        bot.reply_to(message, balasan)
+            bot.reply_to(message, f"Ralat: {str(data)}")
             
     except Exception as e:
         bot.reply_to(message, f"Error: {str(e)}")
