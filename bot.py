@@ -31,7 +31,6 @@ def handle_all(message):
         
         # Jika pengguna hantar gambar
         if message.content_type == 'photo':
-            # Ambil gambar kualiti tertinggi
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
             encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
@@ -50,15 +49,16 @@ def handle_all(message):
                 "max_tokens": 1000
             }
         else:
-            # Jika pengguna hantar teks biasa
+            # Jika pengguna hantar teks biasa (guna model vision yang sama agar tiada ralat model_not_found)
             payload = {
-                "model": "llama-3.3-70b-versatile",
+                "model": "llama-3.2-11b-vision-preview",
                 "messages": [
                     {
                         "role": "user", 
-                        "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jika ditanya tentang pembekal atau tempat beli, berikan panduan umum cara mencari atau senaraikan platform lazim di Malaysia. Jawab secara ringkas dan padat: {prompt}"
+                        "content": f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
                     }
-                ]
+                ],
+                "max_tokens": 1000
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
