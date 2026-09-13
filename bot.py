@@ -1,4 +1,4 @@
-import os
+ import os
 import telebot
 from flask import Flask, request
 import requests
@@ -37,7 +37,7 @@ def handle_all(message):
             text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
 
         payload = {
-            "model": "llama-3.3-70b-versatile",
+            "model": "llama3-8b",
             "messages": [{"role": "user", "content": text_prompt}]
         }
 
