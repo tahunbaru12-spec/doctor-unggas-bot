@@ -23,7 +23,7 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan tepat, lengkap, dan rujuk maklumat semasa dari web jika perlu."
+        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan tepat, lengkap, dan rujuk maklumat semasa jika perlu."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -35,16 +35,14 @@ def handle_all(message):
             user_text = "Berikan nasihat pakar pertanian/haiwan."
 
         if message.content_type == 'photo':
-            user_text = f"Pengguna menghantar gambar dengan soalan: {user_text}. Sila buat carian web jika perlu untuk memberi maklumat rawatan tepat."
+            user_text = f"Pengguna menghantar gambar dengan soalan: {user_text}. Sila berikan analisis dan panduan rawatan berkaitan."
 
-        # Menggunakan model compound Groq yang mempunyai keupayaan carian web terbina dalam
         payload = {
             "model": "groq/compound",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_text}
             ],
-            "tools": [{"type": "web_search"}],
             "max_tokens": 1000
         }
 
