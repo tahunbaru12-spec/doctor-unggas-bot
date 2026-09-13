@@ -3,8 +3,6 @@ import telebot
 from flask import Flask, request
 import requests
 import base64
-from io import BytesIO
-from PIL import Image
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -37,17 +35,10 @@ def handle_all(message):
         if not user_text:
             user_text = "Berikan nasihat pakar pertanian/haiwan."
 
-        # Jika pengguna hantar gambar, kecilkan saiznya agar tidak berlaku ralat saiz terlalu besar
         if message.content_type == 'photo':
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
-            
-            # Proses imej guna Pillow untuk kurangkan resolusi
-            img = Image.open(BytesIO(downloaded_file))
-            img.thumbnail((800, 800))
-            buffered = BytesIO()
-            img.save(buffered, format="JPEG", quality=80)
-            encoded_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
             
             payload = {
                 "model": "groq/compound",
