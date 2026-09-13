@@ -6,11 +6,9 @@ import base64
 from PIL import Image
 import io
 
-# Konfigurasi ID Telegram Wan
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
 
-# Token Telegram & API Key Groq Wan
 TOKEN = "8740787222:AAHXoxcnFtN33LpieyEdFDLND9cHY1Z64Qo"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -48,7 +46,6 @@ def handle_all(message):
         
         if "choices" in data:
             balasan = data["choices"][0]["message"]["content"]
-            # Hadkan panjang mesej kepada 4000 aksara elak ralat Telegram
             if len(balasan) > 4000:
                 balasan = balasan[:4000] + "\n\n...(mesej dipendekkan)"
             bot.reply_to(message, balasan)
