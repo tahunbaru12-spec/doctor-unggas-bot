@@ -37,7 +37,7 @@ def handle_all(message):
             text_prompt = f"Anda doktor pakar haiwan dan pertanian Malaysia. Jawab soalan ini secara ringkas, padat, dan terperinci: {prompt}"
 
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": "llama3-70b-8192",
             "messages": [{"role": "user", "content": text_prompt}]
         }
 
