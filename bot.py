@@ -2,6 +2,7 @@ import os
 import telebot
 from flask import Flask, request
 import requests
+import base64
 
 ADMIN_USER_ID = 8719826950
 TARGET_CHAT_ID = -1003572908909
@@ -23,7 +24,7 @@ def receive_message():
 @bot.message_handler(content_types=['photo', 'text', 'voice'])
 def handle_all(message):
     try:
-        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan ringkas, padat, dan cara rawatan yang tepat dalam Bahasa Melayu."
+        system_prompt = "Anda doktor pakar haiwan dan pertanian Malaysia. Berikan jawapan tepat, lengkap, rujuk maklumat web jika perlu, dan analisis imej dengan terperinci."
         
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}", 
@@ -34,17 +35,34 @@ def handle_all(message):
         if not user_text:
             user_text = "Berikan nasihat pakar pertanian/haiwan."
 
+        # Menggunakan model Qwen vision yang menyokong gambar dan tool
         if message.content_type == 'photo':
-            user_text = f"Pengguna menghantar gambar dengan keterangan: {user_text}. Sila berikan diagnosis dan cara rawatan penyakit haiwan/tanaman tersebut."
-
-        payload = {
-            "model": "llama-3.1-8b-instant",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_text}
-            ],
-            "max_tokens": 400
-        }
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
+            
+            payload = {
+                "model": "qwen/qwen3.6-27b",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": f"{system_prompt}\n\nSoalan: {user_text}"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
+                        ]
+                    }
+                ],
+                "max_tokens": 1000
+            }
+        else:
+            payload = {
+                "model": "qwen/qwen3.6-27b",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_text}
+                ],
+                "max_tokens": 1000
+            }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
         data = response.json()
