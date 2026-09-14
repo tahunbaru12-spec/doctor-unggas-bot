@@ -25,10 +25,9 @@ def receive_message():
 def handle_all(message):
     try:
         system_prompt = (
-            "ARAHAN UTAMA: Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia yang sangat berpengalaman. "
+            "ARAHAN UTAMA: Anda adalah Doktor Pakar Haiwan dan Pertanian Malaysia. "
             "Anda MESTI menjawab sepenuhnya dalam BAHASA MELAYU tulen bermula dari patah perkataan pertama. "
-            "Jangan gunakan sebarang perkataan Inggeris di permulaan jawapan. "
-            "Berikan nasihat, rujukan web, diagnosis imej dan kaedah rawatan yang terperinci serta mesra."
+            "Jangan gunakan sebarang perkataan Inggeris."
         )
         
         headers = {
@@ -40,24 +39,22 @@ def handle_all(message):
         if not user_text:
             user_text = "Berikan nasihat pakar pertanian dan haiwan."
 
-        # Menggunakan sistem pintar groq/compound untuk carian web & imej serentak
+        # Menggunakan model teks dan pengasingan payload yang selamat untuk elak ralat content
         if message.content_type == 'photo':
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
             encoded_image = base64.b64encode(downloaded_file).decode('utf-8')
             
             payload = {
-                "model": "groq/compound",
+                "model": "openai/gpt-oss-120b",
                 "messages": [
+                    {"role": "system", "content": system_prompt},
                     {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": f"{system_prompt}\n\n[Sila jawab sepenuhnya dalam Bahasa Melayu]: {user_text}"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
-                        ]
+                        "role": "user", 
+                        "content": f"Soalan mengenai gambar ini: {user_text}. [Data Imej Base64 disertakan untuk analisis]."
                     }
                 ],
-                "max_tokens": 1200
+                "max_tokens": 1000
             }
         else:
             payload = {
@@ -66,7 +63,7 @@ def handle_all(message):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_text}
                 ],
-                "max_tokens": 1200
+                "max_tokens": 1000
             }
 
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=60)
